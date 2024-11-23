@@ -1,1 +1,1 @@
-# small-c-projects
+A collection of C projects
