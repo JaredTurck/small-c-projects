@@ -18,7 +18,9 @@ char b[10][10] = {
     '.', '.', '.', '.', '.', '.', '.', '.', '.', '.'
 };
 int game_running = 1;
-int bombs[8];
+#define NO_BOMBS 8
+int bombs[NO_BOMBS];
+int score = 0;
 char valid_columns[10] = {'Q','W','E','R','T','Y','U','I','O','P'};
 
 void display_board() {
@@ -52,8 +54,17 @@ void display_board() {
 void generate_bombs() {
     srand(time(0));
     int bomb;
-    for (int i=0; i < 8; i++) {
+    for (int i=0; i < NO_BOMBS; i++) {
         bombs[i] = rand() % 100;
+    }
+}
+
+void show_all_bombs() {
+    int x, y;
+    for (int i=0; i < NO_BOMBS; i++) {
+        x = (int)(bombs[i] / 10);
+        y = (int)(bombs[i] % 10);
+        b[x][y] = 'B';
     }
 }
 
@@ -73,10 +84,51 @@ int column_char2int(int col) {
     }
 }
 
+int xy2bombPos(int x, int y) {
+    if (x > 10) return -1;
+    if (y > 10) return -1;
+    return (x * 10) + y;
+}
+
+void update_numbering(char* position) {
+    int x = position[1] - '0';
+    int y = column_char2int(position[0]);
+    int c = 0;
+
+    for (int i=0; i < NO_BOMBS; i++) {
+        if (xy2bombPos(x + 1, y) == bombs[i]) c++;
+        if (xy2bombPos(x - 1, y) == bombs[i]) c++;
+        if (xy2bombPos(x, y + 1) == bombs[i]) c++;
+        if (xy2bombPos(x, y - 1) == bombs[i]) c++;
+        if (xy2bombPos(x - 1, y - 1) == bombs[i]) c++;
+        if (xy2bombPos(x - 1, y + 1) == bombs[i]) c++;
+        if (xy2bombPos(x + 1, y - 1) == bombs[i]) c++;
+        if (xy2bombPos(x + 1, y + 1) == bombs[i]) c++;
+    }
+    if (c > 0) b[x][y] = c + '0';
+}
+
 void place_marker(char* position) {
     int x = position[1] - '0';
     int y = column_char2int(position[0]);
     b[x][y] = 'X';
+}
+
+void check_win_condition(char* position) {
+    int x = position[1] - '0';
+    int y = column_char2int(position[0]);
+    int pos = (x * 10) + y;
+
+    // Check if player hit bomb
+    for (int i=0; i < NO_BOMBS; i++) {
+        if (bombs[i] == pos) {
+            show_all_bombs();
+            display_board();
+            printf("Game Over, you hit a bomb, score %d!\n", score);
+            game_running = 0;
+        }
+    }
+
 }
 
 int validate_position(char* pos) {
@@ -91,23 +143,9 @@ int validate_position(char* pos) {
     if (valid_col == 0) return 1;                       // Check if column is valid
     if (!(pos[1] >= '0' && pos[1] <= '9')) return 1;    // check if row is valid
     if (b[x][y] == 'X') return 1;                       // Check if position already played
+    check_win_condition(pos);                           // Check if their is a bomb in this position
 
     return 0;
-}
-
-void check_win_condition(char* position) {
-    int x = position[1] - '0';
-    int y = column_char2int(position[0]);
-    int pos = (x * 10) + y;
-
-    // Check if player hit bomb
-    for (int i=0; i < (int)(sizeof(bombs) / sizeof(bombs[0])); i++) {
-        if (bombs[i] == pos) {
-            printf("Game Over, you hit a bomb!\n");
-            game_running = 0;
-        }
-    }
-
 }
 
 int main() {
@@ -125,8 +163,8 @@ int main() {
             scanf("%2s", user_input);
         }
         place_marker(user_input);
+        update_numbering(user_input);
         check_win_condition(user_input);
-
+        score++;
     }
-
 }
