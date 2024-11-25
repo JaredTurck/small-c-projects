@@ -4,8 +4,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <wchar.h>
 
-char b[10][10] = {
+wchar_t b[10][10] = {
     '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 
     '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 
     '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 
@@ -20,8 +21,10 @@ char b[10][10] = {
 int game_running = 1;
 #define NO_BOMBS 8
 int bombs[NO_BOMBS];
-int score = 0;
 char valid_columns[10] = {'Q','W','E','R','T','Y','U','I','O','P'};
+const wchar_t BOMB_ICON = L'💣';
+const wchar_t FLAG_ICON = 'F';
+const wchar_t EMPTY_ICON = 'X';
 
 void display_board() {
     printf(
@@ -64,8 +67,20 @@ void show_all_bombs() {
     for (int i=0; i < NO_BOMBS; i++) {
         x = (int)(bombs[i] / 10);
         y = (int)(bombs[i] % 10);
-        b[x][y] = 'B';
+        b[x][y] = BOMB_ICON;
     }
+}
+
+int calc_score() {
+    int score = 0;
+    for (int x=0; x < 10; x++) {
+        for (int y=0; y < 10; y++) {
+            if ((b[x][y] >= 49 && b[x][y] <= 57) || (b[x][y] == EMPTY_ICON)) {
+                score++;
+            }
+        }
+    }
+    return score;
 }
 
 int column_char2int(int col) {
@@ -90,10 +105,9 @@ int xy2bombPos(int x, int y) {
     return (x * 10) + y;
 }
 
-void update_numbering(char* position) {
-    int x = position[1] - '0';
-    int y = column_char2int(position[0]);
+void update_numbering_pos(int x, int y) {
     int c = 0;
+    int is_bomb = 0;
 
     for (int i=0; i < NO_BOMBS; i++) {
         if (xy2bombPos(x + 1, y) == bombs[i]) c++;
@@ -104,14 +118,44 @@ void update_numbering(char* position) {
         if (xy2bombPos(x - 1, y + 1) == bombs[i]) c++;
         if (xy2bombPos(x + 1, y - 1) == bombs[i]) c++;
         if (xy2bombPos(x + 1, y + 1) == bombs[i]) c++;
+        if (xy2bombPos(x,y) == bombs[i]) is_bomb = 1;
     }
-    if (c > 0) b[x][y] = c + '0';
+    if (c > 0 && is_bomb == 0) {
+        b[x][y] = c + '0';
+    }
+}
+
+void update_numbering(char* position) {
+    int x = position[1] - '0';
+    int y = column_char2int(position[0]);
+
+    update_numbering_pos(x, y);
+    update_numbering_pos(x + 1, y);
+    update_numbering_pos(x - 1, y);
+    update_numbering_pos(x, y + 1);
+    update_numbering_pos(x, y - 1);
+    update_numbering_pos(x - 1, y - 1);
+    update_numbering_pos(x - 1, y + 1);
+    update_numbering_pos(x + 1, y - 1);
+    update_numbering_pos(x + 1, y + 1);
 }
 
 void place_marker(char* position) {
     int x = position[1] - '0';
     int y = column_char2int(position[0]);
-    b[x][y] = 'X';
+    b[x][y] = EMPTY_ICON;
+}
+
+void add_flag(char* position) {
+    if (position[0] == FLAG_ICON) {
+        int x = position[2] - '0';
+        int y = column_char2int(position[1]);
+        if (b[x][y] == '.') {
+            b[x][y] = FLAG_ICON;
+        } else if (b[x][y] == 'F') {
+            b[x][y] = '.';
+        }
+    }
 }
 
 void check_win_condition(char* position) {
@@ -124,7 +168,7 @@ void check_win_condition(char* position) {
         if (bombs[i] == pos) {
             show_all_bombs();
             display_board();
-            printf("Game Over, you hit a bomb, score %d!\n", score);
+            printf("Game Over, you hit a bomb, score %d!\n", calc_score());
             game_running = 0;
         }
     }
@@ -142,29 +186,30 @@ int validate_position(char* pos) {
 
     if (valid_col == 0) return 1;                       // Check if column is valid
     if (!(pos[1] >= '0' && pos[1] <= '9')) return 1;    // check if row is valid
-    if (b[x][y] == 'X') return 1;                       // Check if position already played
+    if (b[x][y] == EMPTY_ICON) return 1;                // Check if position already played
     check_win_condition(pos);                           // Check if their is a bomb in this position
 
     return 0;
 }
 
 int main() {
-    char user_input[2];
+    char user_input[3];
     generate_bombs();
 
     while (game_running) {
         display_board();
         printf("Enter position: ");
-        scanf("%2s", user_input);
+        scanf("%3s", user_input);
+        add_flag(user_input);
         
         while (validate_position(user_input) == 1) {
             display_board();
             printf("Invalid position: ");
-            scanf("%2s", user_input);
+            scanf("%3s", user_input);
+            add_flag(user_input);
         }
         place_marker(user_input);
         update_numbering(user_input);
         check_win_condition(user_input);
-        score++;
     }
 }
