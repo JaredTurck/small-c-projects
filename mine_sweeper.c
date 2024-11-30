@@ -26,7 +26,8 @@ const wchar_t BOMB_ICON = L'💣';
 const wchar_t FLAG_ICON = 'F';
 const wchar_t EMPTY_ICON = 'X';
 
-void display_board() {
+void display_board(int moveUp) {
+    if (moveUp == 0) printf("\033[16A\r");
     printf(
         "\n    Q   W   E   R   T   Y   U   I   O   P\n"
         "  -----------------------------------------\n"
@@ -40,7 +41,8 @@ void display_board() {
         "7 | %c | %c | %c | %c | %c | %c | %c | %c | %c | %c |\n"
         "8 | %c | %c | %c | %c | %c | %c | %c | %c | %c | %c |\n"
         "9 | %c | %c | %c | %c | %c | %c | %c | %c | %c | %c |\n"
-        "  -----------------------------------------\n",
+        "  -----------------------------------------\n"
+        "                                           \n",
         b[0][0],b[0][1],b[0][2],b[0][3],b[0][4],b[0][5],b[0][6],b[0][7],b[0][8],b[0][9],
         b[1][0],b[1][1],b[1][2],b[1][3],b[1][4],b[1][5],b[1][6],b[1][7],b[1][8],b[1][9],
         b[2][0],b[2][1],b[2][2],b[2][3],b[2][4],b[2][5],b[2][6],b[2][7],b[2][8],b[2][9],
@@ -167,7 +169,7 @@ void check_win_condition(char* position) {
     for (int i=0; i < NO_BOMBS; i++) {
         if (bombs[i] == pos) {
             show_all_bombs();
-            display_board();
+            display_board(0);
             printf("Game Over, you hit a bomb, score %d!\n", calc_score());
             game_running = 0;
         }
@@ -195,15 +197,16 @@ int validate_position(char* pos) {
 int main() {
     char user_input[3];
     generate_bombs();
+    display_board(1);
 
     while (game_running) {
-        display_board();
+        display_board(0);
         printf("Enter position: ");
         scanf("%3s", user_input);
         add_flag(user_input);
         
         while (validate_position(user_input) == 1) {
-            display_board();
+            display_board(0);
             printf("Invalid position: ");
             scanf("%3s", user_input);
             add_flag(user_input);
