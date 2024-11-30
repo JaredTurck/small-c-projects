@@ -22,7 +22,7 @@ int game_running = 1;
 #define NO_BOMBS 8
 int bombs[NO_BOMBS];
 char valid_columns[10] = {'Q','W','E','R','T','Y','U','I','O','P'};
-const wchar_t BOMB_ICON = L'💣';
+const wchar_t BOMB_ICON = 'B';
 const wchar_t FLAG_ICON = 'F';
 const wchar_t EMPTY_ICON = 'X';
 
